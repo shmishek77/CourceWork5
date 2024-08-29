@@ -1,5 +1,6 @@
 import psycopg2
 import requests
+from config import config
 
 
 def get_vacancies(employer_id):
@@ -8,7 +9,7 @@ def get_vacancies(employer_id):
     params = {
         'area': 1,
         'page': 0,
-        'per_page': 10
+        'per_page': 20
     }
     url = f"https://api.hh.ru/vacancies?employer_id={employer_id}"
     data_vacancies = requests.get(url, params=params).json()
@@ -43,16 +44,16 @@ def get_employer(employer_id):
     return hh_company
 
 
-def get_connection(database="hh"):
+def get_connection(db_name):
     """Получение соединения с базой данных"""
 
-    return psycopg2.connect(host="localhost", dbname=database, user="postgres", password="68686868")
+    return psycopg2.connect(database = db_name, **config())
 
 
 def create_table():
     """Создание БД, создание таблиц"""
 
-    conn = get_connection()
+    conn = get_connection("hh")
     conn.autocommit = True
     cur = conn.cursor()
 
@@ -75,7 +76,7 @@ def create_table():
     conn.close()
 
 
-    with get_connection() as conn:
+    with get_connection("hh") as conn:
         with conn.cursor() as cur:
             cur.execute("""
                         CREATE TABLE employers (
@@ -98,7 +99,7 @@ def create_table():
 def add_to_table(employers_list):
     """Заполнение базы данных компании и вакансии"""
 
-    with get_connection() as conn:
+    with get_connection("hh") as conn:
         with conn.cursor() as cur:
             cur.execute('TRUNCATE TABLE employers, vacancies RESTART IDENTITY;')
 
